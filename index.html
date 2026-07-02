@@ -32,11 +32,10 @@
       "esri/widgets/TimeSlider"
     ], function(Map, SceneView, GeoJSONLayer, TimeSlider) {
 
-      // 1. Define the Space-Time Cube Layer
+     // 1. Define the Space-Time Cube Layer
       const stcLayer = new GeoJSONLayer({
         url: "https://raw.githubusercontent.com/syuhada93-ops/fictional-disco/refs/heads/main/TimeCubeSpace.json",
         
-        // CRUCIAL FIX: Force the system to read the numbers as Dates
         objectIdField: "OBJECTID",
         fields: [
           { name: "OBJECTID", type: "oid" },
@@ -49,6 +48,11 @@
           startField: "START_DATE", 
           endField: "END_DATE"      
         },
+
+        // NEW FIX: Force the 3D pillars to sit ON top of the terrain, not inside it!
+        elevationInfo: {
+          mode: "on-the-ground"
+        },
         
         // Render the Points as 3D Cylinders
         renderer: {
@@ -58,8 +62,9 @@
             symbolLayers: [{
               type: "object",
               resource: { primitive: "cylinder" }, 
-              width: 25,  
-              height: 30  
+              // NEW FIX: Make them much taller and wider so they pop on the screen
+              width: 45,  
+              height: 200  
             }]
           },
           visualVariables: [{
