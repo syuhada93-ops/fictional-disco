@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>FABU 3D Space-Time Cube</title>
+  
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/dark/main.css">
+  <script src="https://js.arcgis.com/4.29/"></script>
+
+  <style>
+    html, body, #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #242424; /* Dark background to make colors pop */
+    }
+    #timeSlider {
+      position: absolute;
+      bottom: 30px;
+      left: 50px;
+      right: 50px;
+    }
+  </style>
+
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/SceneView",
+      "esri/layers/GeoJSONLayer",
+      "esri/widgets/TimeSlider"
+    ], function(Map, SceneView, GeoJSONLayer, TimeSlider) {
+
+      // 1. Define the Space-Time Cube Layer from your GitHub URL
+      const stcLayer = new GeoJSONLayer({
+        url: "https://raw.githubusercontent.com/syuhada93-ops/fictional-disco/refs/heads/main/TimeCubeSpace.json",
+        
+        // Define how time is read. (Check your GeoJSON for exact field names!)
+        timeInfo: {
+          startField: "START_TIME", // STC default is usually START_TIME or TIMESTAMP
+          endField: "END_TIME"      // STC default is usually END_TIME
+        },
+        
+        // Render as 3D blocks and color-code by kWh consumption
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "polygon-3d",
+            symbolLayers: [{
+              type: "fill",
+              material: { color: [255, 255, 255, 0.8] },
+              edges: { type: "solid", color: [50, 50, 50, 0.5], size: 1 } // Adds nice borders to your 3D blocks
+            }]
+          },
+          visualVariables: [{
+            type: "color",
+            field: "KWH_CONSUMPTION_NONE_ZEROS", // Make sure this matches your exact column name
+            stops: [
+              { value: 0, color: "#fee5d9" },         // Very light orange/white for lowest
+              { value: 50000, color: "#fb6a4a" },     // Medium orange/red for average
+              { value: 100000, color: "#cb181d" }     // Dark red for highest spikes
+            ]
+          }]
+        }
+      });
+
+      // 2. Create the 3D Map (Dark Mode)
+      const map = new Map({
+        basemap: "dark-gray-vector",
+        ground: "world-elevation",
+        layers: [stcLayer]
+      });
+
+      // 3. Setup the View Camera over UTM Johor Bahru
+      const view = new SceneView({
+        container: "viewDiv",
+        map: map,
+        camera: {
+          position: {
+            longitude: 103.635, // UTM JB Longitude
+            latitude: 1.559,    // UTM JB Latitude
+            z: 1200             // Camera height (zoom level)
+          },
+          tilt: 65,             // Angle to view the 3D protrusion
+          heading: 0
+        }
+      });
+
+      // 4. Initialize and configure the Time Slider widget
+      view.whenLayerView(stcLayer).then(function(layerView) {
+        const timeSlider = new TimeSlider({
+          container: "timeSlider",
+          view: view,
+          timeVisible: true,
+          loop: true // Automatically loops when it reaches 2025
+        });
+
+        // Tell the slider to sync its start/end dates with your data
+        stcLayer.when(() => {
+          timeSlider.fullTimeExtent = stcLayer.timeInfo.fullTimeExtent;
+          timeSlider.stops = {
+            interval: { value: 1, unit: "months" } // 1-month steps moving forward
+          };
+        });
+      });
+
+    });
+  </script>
+</head>
+<body>
+  <div id="viewDiv"></div>
+  <div id="timeSlider"></div>
+</body>
+</html>
