@@ -32,13 +32,14 @@
       "esri/widgets/TimeSlider"
     ], function(Map, SceneView, GeoJSONLayer, TimeSlider) {
 
-     // 1. Define the Space-Time Cube Layer
+      // 1. Define the Space-Time Cube Layer
       const stcLayer = new GeoJSONLayer({
         url: "https://raw.githubusercontent.com/syuhada93-ops/fictional-disco/refs/heads/main/TimeCubeSpace.json",
         
         objectIdField: "OBJECTID",
         fields: [
           { name: "OBJECTID", type: "oid" },
+          { name: "TIME_STEP", type: "integer" }, // We need this to stack them!
           { name: "START_DATE", type: "date" },
           { name: "END_DATE", type: "date" },
           { name: "VALUE", type: "double" }
@@ -49,9 +50,13 @@
           endField: "END_DATE"      
         },
 
-        // NEW FIX: Force the 3D pillars to sit ON top of the terrain, not inside it!
+        // THE MAGIC STACKING SCRIPT
         elevationInfo: {
-          mode: "on-the-ground"
+          mode: "relative-to-ground",
+          featureExpressionInfo: {
+            // Multiplies the month number by 30 meters to stack them physically upward!
+            expression: "$feature.TIME_STEP * 30"
+          }
         },
         
         // Render the Points as 3D Cylinders
@@ -62,9 +67,8 @@
             symbolLayers: [{
               type: "object",
               resource: { primitive: "cylinder" }, 
-              // NEW FIX: Make them much taller and wider so they pop on the screen
-              width: 45,  
-              height: 200  
+              width: 35,  
+              height: 30  // Must match the 30 in the math expression above so they stack perfectly!
             }]
           },
           visualVariables: [{
@@ -96,21 +100,21 @@
             latitude: 1.559,    
             z: 1200             
           },
-          tilt: 65,             
+          tilt: 75, // Tilted slightly more so you can see the towers better!         
           heading: 0
         }
       });
 
-      // 4. Initialize the Time Slider widget safely
+      // 4. Initialize the Time Slider widget
       view.when(() => {
         const timeSlider = new TimeSlider({
           container: "timeSlider",
           view: view,
           timeVisible: true,
-          loop: true 
+          loop: false, 
+          playRate: 150 // Speed up the animation slightly
         });
 
-        // Sync slider with the forced date fields
         stcLayer.when(() => {
           timeSlider.fullTimeExtent = stcLayer.timeInfo.fullTimeExtent;
           timeSlider.stops = {
