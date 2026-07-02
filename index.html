@@ -14,7 +14,7 @@
       margin: 0;
       height: 100%;
       width: 100%;
-      background-color: #242424; /* Dark background to make colors pop */
+      background-color: #242424; 
     }
     #timeSlider {
       position: absolute;
@@ -32,11 +32,19 @@
       "esri/widgets/TimeSlider"
     ], function(Map, SceneView, GeoJSONLayer, TimeSlider) {
 
-    // 1. Define the Space-Time Cube Layer from your GitHub URL
+      // 1. Define the Space-Time Cube Layer
       const stcLayer = new GeoJSONLayer({
         url: "https://raw.githubusercontent.com/syuhada93-ops/fictional-disco/refs/heads/main/TimeCubeSpace.json",
         
-        // Match the exact time fields from your raw data!
+        // CRUCIAL FIX: Force the system to read the numbers as Dates
+        objectIdField: "OBJECTID",
+        fields: [
+          { name: "OBJECTID", type: "oid" },
+          { name: "START_DATE", type: "date" },
+          { name: "END_DATE", type: "date" },
+          { name: "VALUE", type: "double" }
+        ],
+        
         timeInfo: {
           startField: "START_DATE", 
           endField: "END_DATE"      
@@ -49,59 +57,59 @@
             type: "point-3d",
             symbolLayers: [{
               type: "object",
-              resource: { primitive: "cylinder" }, // Turns your points into 3D pillars
-              width: 25,  // Width of the pillar in meters
-              height: 30  // Height of the pillar in meters
+              resource: { primitive: "cylinder" }, 
+              width: 25,  
+              height: 30  
             }]
           },
           visualVariables: [{
             type: "color",
-            field: "VALUE", // Match the exact consumption field from your data!
+            field: "VALUE", 
             stops: [
-              { value: 0, color: "#fee5d9" },         // Light orange for lowest
-              { value: 15000, color: "#fb6a4a" },     // Medium orange (adjusted based on your data)
-              { value: 35000, color: "#cb181d" }      // Dark red for spikes like your 33880 value!
+              { value: 0, color: "#fee5d9" },         
+              { value: 15000, color: "#fb6a4a" },     
+              { value: 35000, color: "#cb181d" }      
             ]
           }]
         }
       });
 
-      // 2. Create the 3D Map (Dark Mode)
+      // 2. Create the 3D Map
       const map = new Map({
         basemap: "dark-gray-vector",
         ground: "world-elevation",
         layers: [stcLayer]
       });
 
-      // 3. Setup the View Camera over UTM Johor Bahru
+      // 3. Setup the View Camera
       const view = new SceneView({
         container: "viewDiv",
         map: map,
         camera: {
           position: {
-            longitude: 103.635, // UTM JB Longitude
-            latitude: 1.559,    // UTM JB Latitude
-            z: 1200             // Camera height (zoom level)
+            longitude: 103.635, 
+            latitude: 1.559,    
+            z: 1200             
           },
-          tilt: 65,             // Angle to view the 3D protrusion
+          tilt: 65,             
           heading: 0
         }
       });
 
-      // 4. Initialize and configure the Time Slider widget
-      view.whenLayerView(stcLayer).then(function(layerView) {
+      // 4. Initialize the Time Slider widget safely
+      view.when(() => {
         const timeSlider = new TimeSlider({
           container: "timeSlider",
           view: view,
           timeVisible: true,
-          loop: true // Automatically loops when it reaches 2025
+          loop: true 
         });
 
-        // Tell the slider to sync its start/end dates with your data
+        // Sync slider with the forced date fields
         stcLayer.when(() => {
           timeSlider.fullTimeExtent = stcLayer.timeInfo.fullTimeExtent;
           timeSlider.stops = {
-            interval: { value: 1, unit: "months" } // 1-month steps moving forward
+            interval: { value: 1, unit: "months" } 
           };
         });
       });
