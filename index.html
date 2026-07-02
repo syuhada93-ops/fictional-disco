@@ -32,34 +32,35 @@
       "esri/widgets/TimeSlider"
     ], function(Map, SceneView, GeoJSONLayer, TimeSlider) {
 
-      // 1. Define the Space-Time Cube Layer from your GitHub URL
+    // 1. Define the Space-Time Cube Layer from your GitHub URL
       const stcLayer = new GeoJSONLayer({
         url: "https://raw.githubusercontent.com/syuhada93-ops/fictional-disco/refs/heads/main/TimeCubeSpace.json",
         
-        // Define how time is read. (Check your GeoJSON for exact field names!)
+        // Match the exact time fields from your raw data!
         timeInfo: {
-          startField: "START_DATE", // STC default is usually START_TIME or TIMESTAMP
-          endField: "END_DATE"      // STC default is usually END_TIME
+          startField: "START_DATE", 
+          endField: "END_DATE"      
         },
         
-        // Render as 3D blocks and color-code by kWh consumption
+        // Render the Points as 3D Cylinders
         renderer: {
           type: "simple",
           symbol: {
-            type: "polygon-3d",
+            type: "point-3d",
             symbolLayers: [{
-              type: "fill",
-              material: { color: [255, 255, 255, 0.8] },
-              edges: { type: "solid", color: [50, 50, 50, 0.5], size: 1 } // Adds nice borders to your 3D blocks
+              type: "object",
+              resource: { primitive: "cylinder" }, // Turns your points into 3D pillars
+              width: 25,  // Width of the pillar in meters
+              height: 30  // Height of the pillar in meters
             }]
           },
           visualVariables: [{
             type: "color",
-            field: "KWH_CONSUMPTION_NONE_ZEROS", // Make sure this matches your exact column name
+            field: "VALUE", // Match the exact consumption field from your data!
             stops: [
-              { value: 0, color: "#fee5d9" },         // Very light orange/white for lowest
-              { value: 50000, color: "#fb6a4a" },     // Medium orange/red for average
-              { value: 100000, color: "#cb181d" }     // Dark red for highest spikes
+              { value: 0, color: "#fee5d9" },         // Light orange for lowest
+              { value: 15000, color: "#fb6a4a" },     // Medium orange (adjusted based on your data)
+              { value: 35000, color: "#cb181d" }      // Dark red for spikes like your 33880 value!
             ]
           }]
         }
