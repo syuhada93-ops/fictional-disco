@@ -105,16 +105,18 @@
         }
       });
 
-      // 4. Initialize the Time Slider widget
+      // 4. Initialize the Time Slider widget safely
       view.when(() => {
         const timeSlider = new TimeSlider({
           container: "timeSlider",
           view: view,
+          mode: "cumulative-from-start", // <--- THE FIX FOR STACKING!
           timeVisible: true,
           loop: false, 
           playRate: 150 // Speed up the animation slightly
         });
 
+        // Sync slider with the forced date fields
         stcLayer.when(() => {
           timeSlider.fullTimeExtent = stcLayer.timeInfo.fullTimeExtent;
           timeSlider.stops = {
